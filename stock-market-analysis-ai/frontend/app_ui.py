@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 # Backend URL Configuration
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://backend:8000')
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://stock-analysis-agent.onrender.com')
 
 # Initialize session state if not exists
 if 'current_page' not in st.session_state:

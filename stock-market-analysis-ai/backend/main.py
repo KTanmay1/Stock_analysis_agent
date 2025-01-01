@@ -30,31 +30,43 @@ def analyze_stock(symbol: str):
         # Clean symbol input
         symbol = symbol.strip().upper().replace('.NS', '')
         
+        print(f"Analyzing symbol: {symbol}")  # Debug log
+        
         # Fetch stock data
         stock_data = stock_agent.get_stock_info(symbol)
-        if 'error' in stock_data:
-            return {"error": stock_data['error']}
-
+        print(f"Stock data: {stock_data}")  # Debug log
+        
         # Fetch technical indicators
         technical_data = stock_agent.analyze_technical_indicators(symbol)
-        if 'error' in technical_data:
-            return {"error": technical_data['error']}
-
+        print(f"Technical data: {technical_data}")  # Debug log
+        
         # Fetch recent news
         news_data = web_agent.search(f"{symbol} stock news NSE India")
-
+        print(f"News data: {len(news_data)} articles found")  # Debug log
+        
         # Generate AI analysis
         analysis_result = financial_agent.analyze_stock(symbol)
+        
+        # Ensure we're getting the analysis from the result
         analysis = analysis_result.get('analysis', 'No AI analysis available.')
-
-        return {
+        if isinstance(analysis_result, dict) and 'error' in analysis_result:
+            print(f"AI Analysis error: {analysis_result['error']}")  # Debug log
+            analysis = f"Error in AI analysis: {analysis_result['error']}"
+        
+        response_data = {
             "stock_data": stock_data,
             "technical_data": technical_data,
             "news_data": news_data,
             "analysis": analysis
         }
+        
+        print(f"Complete response data: {response_data}")  # Debug log
+        return response_data
+        
     except Exception as e:
+        print(f"Error in analyze_stock: {str(e)}")  # Debug log
         return {"error": f"Failed to analyze stock: {str(e)}"}
+
 
 
 @app.get("/health")

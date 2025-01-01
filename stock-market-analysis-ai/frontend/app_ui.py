@@ -1,18 +1,35 @@
 import streamlit as st
 import requests
 import os
+import pandas as pd
 
 # Backend URL Configuration
 BACKEND_URL = os.getenv('BACKEND_URL', 'http://backend:8000')
 
+# Initialize session state if not exists
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "🔥 Trending Stocks"
+if 'symbol_to_analyze' not in st.session_state:
+    st.session_state.symbol_to_analyze = ""
+
 # Title of the App
 st.title("📊 Indian Stock Market Analysis Tool")
+
+# Function to handle stock analysis button clicks
+def analyze_stock_callback(symbol):
+    st.session_state.symbol_to_analyze = symbol
+    st.session_state.current_page = "📈 Stock Analysis"
 
 # Sidebar for navigation
 page = st.sidebar.selectbox(
     "Choose a Page",
-    ["🔥 Trending Stocks", "📈 Stock Analysis"]
+    ["🔥 Trending Stocks", "📈 Stock Analysis"],
+    key='page_selection',
+    index=0 if st.session_state.current_page == "🔥 Trending Stocks" else 1
 )
+
+# Update current page in session state
+st.session_state.current_page = page
 
 if page == "🔥 Trending Stocks":
     st.header("Trending Stocks in Indian Market")
@@ -33,46 +50,55 @@ if page == "🔥 Trending Stocks":
                     with st.expander(f"{stock['symbol']} ({stock['sector']})"):
                         st.write(f"**Price:** ₹{stock['current_price']}")
                         st.write(f"**5-Day Performance:** {stock['performance_5d']}%")
-                        # Add analyze button for each trending stock
-                        if st.button(f"Analyze {stock['symbol']}", key=f"analyze_{stock['symbol']}"):
-                            st.session_state.symbol_to_analyze = stock['symbol']
-                            st.session_state.page = "Stock Analysis"
-                            st.experimental_rerun()
-            
+                        # Modified button with callback
+                        if st.button(f"Analyze {stock['symbol']}", 
+                                   key=f"analyze_{stock['symbol']}", 
+                                   on_click=analyze_stock_callback, 
+                                   args=(stock['symbol'],)):
+                            st.rerun()
+
             # Display Most Active Stocks
             st.subheader("📊 Most Active Stocks")
             for stock in trending_data['most_active']:
                 with st.expander(f"{stock['symbol']} ({stock['sector']})"):
                     st.write(f"**Price:** ₹{stock['current_price']}")
                     st.write(f"**Average Volume:** {stock['avg_volume']:,}")
-                    if st.button(f"Analyze {stock['symbol']}", key=f"analyze_active_{stock['symbol']}"):
-                        st.session_state.symbol_to_analyze = stock['symbol']
-                        st.session_state.page = "Stock Analysis"
-                        st.experimental_rerun()
-            
+                    # Modified button with callback
+                    if st.button(f"Analyze {stock['symbol']}", 
+                               key=f"analyze_active_{stock['symbol']}", 
+                               on_click=analyze_stock_callback, 
+                               args=(stock['symbol'],)):
+                        st.rerun()
+
             # Display Sector Performance
             st.subheader("🏢 Sector Performance (5 Days)")
             sector_data = trending_data['sector_performance']
             
-            # Create a bar chart for sector performance
-            import plotly.graph_objects as go
-            
-            fig = go.Figure(data=[
-                go.Bar(
-                    x=list(sector_data.keys()),
-                    y=list(sector_data.values()),
-                    marker_color=['green' if x > 0 else 'red' for x in sector_data.values()]
+            try:
+                import plotly.graph_objects as go
+                
+                fig = go.Figure(data=[
+                    go.Bar(
+                        x=list(sector_data.keys()),
+                        y=list(sector_data.values()),
+                        marker_color=['green' if x > 0 else 'red' for x in sector_data.values()]
+                    )
+                ])
+                
+                fig.update_layout(
+                    title="Sector Performance",
+                    xaxis_title="Sector",
+                    yaxis_title="Performance (%)",
+                    height=400
                 )
-            ])
-            
-            fig.update_layout(
-                title="Sector Performance",
-                xaxis_title="Sector",
-                yaxis_title="Performance (%)",
-                height=400
-            )
-            
-            st.plotly_chart(fig)
+                
+                st.plotly_chart(fig)
+                
+            except Exception as e:
+                st.error(f"Error displaying sector performance chart: {str(e)}")
+                # Fallback to text display
+                for sector, performance in sorted(sector_data.items(), key=lambda x: x[1], reverse=True):
+                    st.write(f"{sector}: {performance}%")
             
         else:
             st.error("Failed to fetch trending stocks data.")
@@ -81,20 +107,20 @@ if page == "🔥 Trending Stocks":
         st.error(f"Error fetching trending stocks: {str(e)}")
 
 else:  # Stock Analysis page
-    # Get symbol from session state if available
-    symbol = st.session_state.get('symbol_to_analyze', '')
+    # Get symbol from session state
+    initial_symbol = st.session_state.symbol_to_analyze
     
     # User Input for Stock Symbol
-    symbol = st.text_input("Enter Stock Symbol (e.g., RELIANCE):", value=symbol)
+    symbol = st.text_input("Enter Stock Symbol (e.g., RELIANCE):", value=initial_symbol)
     
-    # Clear session state after using it
-    if 'symbol_to_analyze' in st.session_state:
-        del st.session_state.symbol_to_analyze
+    # Clear session state after getting the initial value
+    if st.session_state.symbol_to_analyze:
+        st.session_state.symbol_to_analyze = ""
 
-    # Analyze Button
-    if st.button("Analyze") or symbol:  # Auto-analyze if symbol is from trending page
-        if symbol:
-            try:
+    # Only show analysis if we have a symbol
+    if symbol:  # Check if symbol exists and is not empty
+        try:
+            with st.spinner(f'Analyzing {symbol}...'):
                 response = requests.get(f"{BACKEND_URL}/analyze/{symbol}")
                 
                 if response.status_code == 200:
@@ -124,7 +150,9 @@ else:  # Stock Analysis page
                     # Technical Analysis Tab
                     with tabs[1]:
                         st.subheader("📊 Technical Indicators")
-                        if 'error' in data.get('technical_data', {}):
+                        if 'technical_data' not in data:
+                            st.error("Technical analysis data not available")
+                        elif 'error' in data['technical_data']:
                             st.error(data['technical_data']['error'])
                         else:
                             col1, col2 = st.columns(2)
@@ -142,30 +170,44 @@ else:  # Stock Analysis page
                     # News Tab
                     with tabs[2]:
                         st.subheader("📰 Recent News")
-                        if data.get('news_data'):
-                            for news in data['news_data']:
-                                with st.expander(news['title']):
-                                    st.write(news['snippet'])
+                        if 'news_data' not in data:
+                            st.error("News data not available")
+                        elif not data['news_data']:
+                            st.info("No recent news found")
                         else:
-                            st.write("No news articles found.")
+                            for news in data['news_data']:
+                                with st.expander(news['title'] if news['title'] else "Untitled"):
+                                    st.write(news['snippet'])
                     
                     # AI Analysis Tab
                     with tabs[3]:
                         st.subheader("🤖 AI Analysis")
-                        if 'analysis' in data:
+                        if 'analysis' not in data:
+                            st.error("AI analysis not available")
+                        elif isinstance(data['analysis'], str):
                             st.write(data['analysis'])
                         else:
-                            st.write("No AI analysis available.")
-                            
+                            st.error("Invalid AI analysis format")
+                
                 else:
-                    st.error("Failed to fetch data from the backend.")
-                    
-            except requests.exceptions.ConnectionError:
-                st.error("Failed to connect to the backend. Please ensure the backend is running.")
-            except requests.exceptions.RequestException as e:
-                st.error(f"Request failed: {str(e)}")
-            except Exception as e:
-                st.error(f"Unexpected error: {str(e)}")
+                    st.error(f"Failed to fetch data from the backend. Status code: {response.status_code}")
+                    if response.content:
+                        st.error(f"Error details: {response.content}")
+                
+        except requests.exceptions.ConnectionError:
+            st.error("Failed to connect to the backend. Please ensure the backend is running.")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Request failed: {str(e)}")
+        except Exception as e:
+            st.error(f"Unexpected error: {str(e)}")
+            st.error(f"Error details: {type(e).__name__}")
+    else:
+        st.info("Enter a stock symbol above and press Enter to analyze")
+
+    # Add analyze button after the text input
+    if st.button("Analyze Stock"):
+        if symbol:
+            st.experimental_rerun()
         else:
             st.warning("Please enter a valid stock symbol.")
 

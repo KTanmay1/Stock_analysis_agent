@@ -3,7 +3,7 @@ import requests
 import os
 
 # Backend URL Configuration
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://backend:8000')
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://stock-analysis-agent.onrender.com')
 
 # Title of the App
 st.title("📊 Indian Stock Market Analysis Tool")

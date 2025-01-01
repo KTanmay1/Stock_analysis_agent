@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from groq import Groq
 from dotenv import load_dotenv
+import difflib
 
 # Load environment variables
 load_dotenv()
@@ -79,7 +80,7 @@ class IndianStockAgent:
             }
         except Exception as e:
             return {'error': f"Error fetching stock info: {str(e)}"}
-
+    
     def analyze_technical_indicators(self, symbol: str) -> Dict:
         try:
             # Remove .NS if present

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from stock_agents import IndianStockAgent, WebSearchAgent, FinancialAnalysisAgent
+from stock_agents import IndianStockAgent, WebSearchAgent, FinancialAnalysisAgent, TrendingStocksAgent
 from dotenv import load_dotenv
 import os
 
@@ -75,3 +75,16 @@ def test_ai_analysis():
         return {"test_analysis": test_result.get('analysis', 'No analysis generated.')}
     except Exception as e:
         return {"error": f"AI analysis failed: {str(e)}"}
+    
+@app.get("/trending")
+async def get_trending_stocks():
+    trending_agent = TrendingStocksAgent()
+    trending_data = trending_agent.get_trending_stocks()
+    sector_performance = trending_agent.get_sector_performance()
+    
+    return {
+        "top_movers": trending_data['top_movers'],
+        "most_active": trending_data['most_active'],
+        "sector_performance": sector_performance
+    }
+

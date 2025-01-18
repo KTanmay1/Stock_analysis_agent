@@ -1,11 +1,21 @@
 from agents.web_search_agent import WebSearchAgent
 from agents.indian_stock_agent import IndianStockAgent
 from typing import Dict
+import os
+from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+# Initialize Groq client
+groq_client = Groq(api_key=GROQ_API_KEY)
+
 
 class FinancialAnalysisAgent:
     def __init__(self):
         self.web_search_agent = WebSearchAgent()
         self.indian_stock_agent = IndianStockAgent()
+        self.groq_client = groq_client
 
     def analyze_stock(self, symbol: str) -> Dict:
         # Clean the symbol

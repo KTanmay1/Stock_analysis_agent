@@ -95,3 +95,15 @@ class TrendingStocksAgent:
             return sector_avg
         except Exception as e:
             return {'error': f"Error calculating sector performance: {str(e)}"}
+
+def verify_stock_data(symbol: str) -> bool:
+    """Verify if stock data is available for the given symbol."""
+    try:
+        symbol = symbol.replace('.NS', '')
+        nse_symbol = f"{symbol}.NS"
+        stock = yf.Ticker(nse_symbol)
+        hist = stock.history(period='1mo')
+        return not hist.empty
+    except Exception as e:
+        print(f"Error verifying {symbol}: {str(e)}")
+        return False

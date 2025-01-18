@@ -11,3 +11,4 @@ httpx==0.24.1
 nltk==3.8.1
 yfinance==0.2.18
 groq
+autogen

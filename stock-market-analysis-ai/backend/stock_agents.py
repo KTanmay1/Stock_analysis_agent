@@ -7,6 +7,27 @@ import os
 from datetime import datetime
 from groq import Groq
 from dotenv import load_dotenv
+import numpy as np
+
+# Import technical indicators
+from technical_indicators import (
+    calculate_macd,
+    calculate_bollinger_bands,
+    calculate_emas,
+    calculate_volume_indicators,
+    calculate_atr,
+    analyze_trend_multi_factor
+)
+
+# Import risk and confidence metrics
+from risk_confidence import (
+    calculate_risk_metrics,
+    calculate_confidence_score,
+    generate_recommendation
+)
+
+# Import logging
+from logger_config import log_function_call, PerformanceTimer, log_analysis_result
 
 # Load environment variables
 load_dotenv()
@@ -21,116 +42,184 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 class WebSearchAgent:
     def __init__(self):
         self.groq_client = groq_client
-
-    def search(self, query: str) -> List[Dict]:
-        url = f"https://duckduckgo.com/html/?q={query}"
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        # Import here to avoid circular imports
+        from news_aggregator import NewsAggregator
+        from article_extractor import ArticleExtractor
+        from multi_stage_analyzer import MultiStageAnalyzer
         
-        try:
-            response = requests.get(url, headers=headers)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            results = []
+        self.news_aggregator = NewsAggregator()
+        self.article_extractor = ArticleExtractor()
+        self.multi_stage_analyzer = MultiStageAnalyzer(GROQ_API_KEY)
+
+    def search(self, query: str) -> Dict:
+        """
+        Enhanced search with full article extraction and multi-stage analysis
+        
+        Args:
+            query: Search query (e.g., "RELIANCE stock news NSE India")
             
-            for result in soup.find_all('div', class_='result'):
-                title = result.find('h2').text if result.find('h2') else ''
-                snippet = result.find('a', class_='result__snippet').text if result.find('a', class_='result__snippet') else ''
-                results.append({
-                    'title': title,
-                    'snippet': snippet
-                })
-            return results[:5]
+        Returns:
+            Dict with articles, patterns, overall_sentiment, ai_synthesis
+        """
+        try:
+            # Extract symbol from query
+            symbol = self._extract_symbol(query)
+            
+            # Step 1: Fetch news from multiple sources
+            print(f"📰 Fetching news for {symbol}...")
+            news_articles = self.news_aggregator.fetch_news(symbol, max_articles=10)
+            
+            if not news_articles:
+                print(f"No news found for {symbol}")
+                return {
+                    'articles': [],
+                    'patterns': {},
+                    'overall_sentiment': {'overall_sentiment': 'neutral', 'overall_score': 0.0, 'article_count': 0},
+                    'ai_synthesis': 'No news articles found'
+                }
+            
+            # Step 2: Extract full article content (parallel)
+            print(f"📄 Extracting full content from {len(news_articles)} articles...")
+            articles_with_content = self.article_extractor.extract_multiple(news_articles)
+            
+            # Step 3: Add credibility scores
+            articles_with_content = self.news_aggregator.add_credibility_score(articles_with_content)
+            
+            # Step 4: Run multi-stage analysis (FinBERT → Patterns → Groq)
+            print(f"🧠 Running multi-stage sentiment analysis...")
+            comprehensive_analysis = self.multi_stage_analyzer.analyze_comprehensive(
+                symbol, articles_with_content
+            )
+            
+            return comprehensive_analysis
+            
         except Exception as e:
-            print(f"Error in web search: {str(e)}")
-            return []
+            print(f"Error in enhanced search: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'articles': [],
+                'patterns': {},
+                'overall_sentiment': {'overall_sentiment': 'neutral', 'overall_score': 0.0, 'article_count': 0},
+                'ai_synthesis': f'Error: {str(e)}'
+            }
+    
+    def _extract_symbol(self, query: str) -> str:
+        """Extract stock symbol from query"""
+        # Simple extraction: first word is usually the symbol
+        words = query.split()
+        if words:
+            # Remove common words
+            common_words = {'stock', 'news', 'nse', 'india', 'market'}
+            for word in words:
+                if word.lower() not in common_words:
+                    return word.upper()
+        return query
 
 class IndianStockAgent:
     def __init__(self):
         self.groq_client = groq_client
 
+    @log_function_call
     def get_stock_info(self, symbol: str) -> Dict:
         try:
-            # Remove .NS if present
-            symbol = symbol.replace('.NS', '')
-            nse_symbol = f"{symbol}.NS"
-            
-            stock = yf.Ticker(nse_symbol)
-            
-            # First try to get current data
-            current_data = stock.history(period='1d')
-            if current_data.empty:
-                return {'error': 'No current data available'}
-            
-            # Get stock info
-            info = stock.info
-            
-            return {
-                'symbol': nse_symbol,
-                'current_price': round(float(current_data['Close'].iloc[-1]), 2),
-                'day_high': info.get('dayHigh', 'N/A'),
-                'day_low': info.get('dayLow', 'N/A'),
-                'volume': info.get('volume', 'N/A'),
-                'market_cap': info.get('marketCap', 'N/A'),
-                'pe_ratio': info.get('trailingPE', 'N/A'),
-                '52_week_high': info.get('fiftyTwoWeekHigh', 'N/A'),
-                '52_week_low': info.get('fiftyTwoWeekLow', 'N/A'),
-                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
+            with PerformanceTimer(f"Fetching stock info for {symbol}"):
+                # Remove .NS if present
+                symbol = symbol.replace('.NS', '')
+                nse_symbol = f"{symbol}.NS"
+                
+                stock = yf.Ticker(nse_symbol)
+                
+                # First try to get current data
+                current_data = stock.history(period='1d')
+                if current_data.empty:
+                    return {'error': 'No current data available'}
+                
+                # Get stock info
+                info = stock.info
+                
+                return {
+                    'symbol': nse_symbol,
+                    'current_price': round(float(current_data['Close'].iloc[-1]), 2),
+                    'day_high': info.get('dayHigh', 'N/A'),
+                    'day_low': info.get('dayLow', 'N/A'),
+                    'volume': info.get('volume', 'N/A'),
+                    'market_cap': info.get('marketCap', 'N/A'),
+                    'pe_ratio': info.get('trailingPE', 'N/A'),
+                    '52_week_high': info.get('fiftyTwoWeekHigh', 'N/A'),
+                    '52_week_low': info.get('fiftyTwoWeekLow', 'N/A'),
+                    'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
         except Exception as e:
             return {'error': f"Error fetching stock info: {str(e)}"}
 
+    @log_function_call
     def analyze_technical_indicators(self, symbol: str) -> Dict:
         try:
-            # Remove .NS if present
-            symbol = symbol.replace('.NS', '')
-            nse_symbol = f"{symbol}.NS"
-            
-            # Fetch historical data
-            stock = yf.Ticker(nse_symbol)
-            hist = stock.history(period='1mo', interval='1d')
-            
-            if hist.empty:
-                return {'error': 'No historical data available'}
-            
-            print(f"Debug: Retrieved {len(hist)} days of historical data")
-            
-            # Ensure we have enough data points
-            if len(hist) < 50:
-                hist = stock.history(period='3mo', interval='1d')
+            with PerformanceTimer(f"Technical analysis for {symbol}"):
+                # Remove .NS if present
+                symbol = symbol.replace('.NS', '')
+                nse_symbol = f"{symbol}.NS"
+                
+                # Fetch historical data
+                stock = yf.Ticker(nse_symbol)
+                hist = stock.history(period='1mo', interval='1d')
+                
+                if hist.empty:
+                    return {'error': 'No historical data available'}
+                
+                print(f"Debug: Retrieved {len(hist)} days of historical data")
+                
+                # Ensure we have enough data points
                 if len(hist) < 50:
-                    return {
-                        'error': f'Insufficient data points. Got {len(hist)}, need at least 50'
+                    hist = stock.history(period='3mo', interval='1d')
+                    if len(hist) < 50:
+                        return {
+                            'error': f'Insufficient data points. Got {len(hist)}, need at least 50'
+                        }
+                
+                # Calculate basic SMAs and RSI (keep existing for compatibility)
+                try:
+                    hist['SMA20'] = hist['Close'].rolling(window=20, min_periods=1).mean()
+                    hist['SMA50'] = hist['Close'].rolling(window=50, min_periods=1).mean()
+                    
+                    # Calculate RSI
+                    delta = hist['Close'].diff()
+                    gain = delta.where(delta > 0, 0).rolling(window=14).mean()
+                    loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
+                    rs = gain / loss
+                    hist['RSI'] = 100 - (100 / (1 + rs))
+                    
+                    # Get the most recent values
+                    latest = hist.iloc[-1]
+                    
+                    # Build response with basic indicators
+                    response = {
+                        'sma20': round(float(latest['SMA20']), 2),
+                        'sma50': round(float(latest['SMA50']), 2),
+                        'rsi': round(float(latest['RSI']), 2),
+                        'trend': 'Bullish' if latest['SMA20'] > latest['SMA50'] else 'Bearish',
+                        'rsi_signal': 'Oversold' if latest['RSI'] < 30 else 'Overbought' if latest['RSI'] > 70 else 'Neutral',
+                        'last_close': round(float(latest['Close']), 2),
+                        'last_volume': int(latest['Volume']),
+                        'data_points': len(hist)
                     }
-            
-            # Calculate SMAs
-            try:
-                hist['SMA20'] = hist['Close'].rolling(window=20, min_periods=1).mean()
-                hist['SMA50'] = hist['Close'].rolling(window=50, min_periods=1).mean()
-                
-                # Calculate RSI
-                delta = hist['Close'].diff()
-                gain = delta.where(delta > 0, 0).rolling(window=14).mean()
-                loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
-                rs = gain / loss
-                hist['RSI'] = 100 - (100 / (1 + rs))
-                
-                # Get the most recent values
-                latest = hist.iloc[-1]
-                
-                return {
-                    'sma20': round(float(latest['SMA20']), 2),
-                    'sma50': round(float(latest['SMA50']), 2),
-                    'rsi': round(float(latest['RSI']), 2),
-                    'trend': 'Bullish' if latest['SMA20'] > latest['SMA50'] else 'Bearish',
-                    'rsi_signal': 'Oversold' if latest['RSI'] < 30 else 'Overbought' if latest['RSI'] > 70 else 'Neutral',
-                    'last_close': round(float(latest['Close']), 2),
-                    'last_volume': int(latest['Volume']),
-                    'data_points': len(hist)
-                }
-            except Exception as calc_error:
-                return {'error': f'Error in calculations: {str(calc_error)}'}
-                
+                    
+                    # Add advanced indicators
+                    response['macd'] = calculate_macd(hist)
+                    response['bollinger'] = calculate_bollinger_bands(hist)
+                    response['ema'] = calculate_emas(hist)
+                    response['volume'] = calculate_volume_indicators(hist)
+                    response['atr'] = calculate_atr(hist)
+                    
+                    # Add multi-factor trend analysis
+                    response['trend_analysis'] = analyze_trend_multi_factor(response)
+                    
+                    return response
+                    
+                except Exception as calc_error:
+                    return {'error': f'Error in calculations: {str(calc_error)}'}
+                    
         except Exception as e:
             return {'error': f"Failed to fetch technical data: {str(e)}"}
 
@@ -152,62 +241,167 @@ class FinancialAnalysisAgent:
         self.indian_stock_agent = IndianStockAgent()
         self.groq_client = groq_client
 
+    @log_function_call
     def analyze_stock(self, symbol: str) -> Dict:
-        # Clean the symbol
-        symbol = symbol.strip().upper().replace('.NS', '')
-        
-        print(f"Fetching data for {symbol}...")
-        
-        stock_data = self.indian_stock_agent.get_stock_info(symbol)
-        if 'error' in stock_data:
-            print(f"Warning: {stock_data['error']}")
+        with PerformanceTimer(f"Complete analysis for {symbol}"):
+            # Clean the symbol
+            symbol = symbol.strip().upper().replace('.NS', '')
             
-        technical_data = self.indian_stock_agent.analyze_technical_indicators(symbol)
-        if 'error' in technical_data:
-            print(f"Warning: {technical_data['error']}")
+            print(f"Fetching data for {symbol}...")
             
-        news_data = self.web_search_agent.search(f"{symbol} stock news NSE India")
-        
-        analysis_prompt = f"""
-        Analyze the following data for {symbol}:
-        
-        Stock Data: {stock_data}
-        Technical Indicators: {technical_data}
-        Recent News: {news_data}
-        
-        Please provide a comprehensive analysis including:
-        1. Current market position and valuation
-        2. Technical analysis interpretation (if data available)
-        3. News sentiment analysis
-        4. Trading recommendation (Short-term and Long-term)
-        5. Key risks and opportunities
-        6. Also tell if I buy at the current price, what should be the target price and stop loss. Explain your reasoning.
+            stock_data = self.indian_stock_agent.get_stock_info(symbol)
+            if 'error' in stock_data:
+                print(f"Warning: {stock_data['error']}")
+                
+            technical_data = self.indian_stock_agent.analyze_technical_indicators(symbol)
+            if 'error' in technical_data:
+                print(f"Warning: {technical_data['error']}")
+            
+            # Calculate risk metrics
+            risk_data = {'error': 'No data'}
+            if 'error' not in technical_data:
+                try:
+                    # Get historical data for risk calculation
+                    nse_symbol = f"{symbol}.NS"
+                    stock = yf.Ticker(nse_symbol)
+                    hist = stock.history(period='1y')
+                    if not hist.empty:
+                        risk_data = calculate_risk_metrics(symbol, hist)
+                except Exception as e:
+                    risk_data = {'error': f'Risk calculation failed: {str(e)}'}
+            
+            # Fetch news with comprehensive analysis (multi-stage)
+            news_analysis = self.web_search_agent.search(f"{symbol} stock news NSE India")
+            
+            # Extract components from comprehensive analysis
+            news_data = news_analysis.get('articles', [])
+            patterns = news_analysis.get('patterns', {})
+            sentiment_data = news_analysis.get('overall_sentiment', {})
+            ai_synthesis = news_analysis.get('ai_synthesis', '')
+            
+            # Calculate confidence score WITH sentiment
+            confidence_data = calculate_confidence_score(stock_data, technical_data, news_data, sentiment_data)
+            
+            # Generate automated recommendation WITH sentiment
+            recommendation = generate_recommendation(stock_data, technical_data, risk_data, confidence_data, sentiment_data)
+            
+            # Build enhanced AI prompt with structured data
+            current_price = stock_data.get('current_price', 'N/A')
+            
+            # Extract key indicators for prompt
+            trend_info = "N/A"
+            if 'trend_analysis' in technical_data:
+                ta = technical_data['trend_analysis']
+                trend_info = f"{ta.get('trend', 'N/A')} (strength: {ta.get('strength', 0)}%, confidence: {ta.get('confidence', 0)}%)"
+            elif 'trend' in technical_data:
+                trend_info = technical_data['trend']
+            
+            rsi_info = technical_data.get('rsi', 'N/A')
+            macd_info = technical_data.get('macd', {}).get('crossover', 'N/A') if 'macd' in technical_data else 'N/A'
+            
+            risk_info = "N/A"
+            if 'error' not in risk_data:
+                risk_info = f"{risk_data.get('risk_level', 'N/A')} (volatility: {risk_data.get('volatility', 'N/A')}%)"
+            
+            # Extract sentiment info for prompt
+            sentiment_info = "N/A"
+            if sentiment_data:
+                sentiment_info = f"{sentiment_data.get('overall_sentiment', 'N/A')} (score: {sentiment_data.get('overall_score', 0):+.2f})"
+            
+            # Extract pattern info
+            pattern_summary = patterns.get('pattern_summary', 'N/A')
+            consensus_level = patterns.get('consensus', {}).get('level', 'N/A')
+            consensus_pct = patterns.get('consensus', {}).get('agreement_percentage', 0)
+            conflicts = patterns.get('conflicts', [])
+            
+            analysis_prompt = f"""
+You are a professional Indian stock market analyst. Analyze {symbol} stock.
 
-        
-        Note: If some data is missing or shows errors, please focus on the available data and mention the limitations in your analysis.
-        Also tell if I buy at the current price, what should be the target price and stop loss.
-        """
-        
-        try:
-            completion = self.groq_client.chat.completions.create(
-                model="gemma2-9b-it",
-                messages=[
-                    {"role": "system", "content": "You are a professional Indian stock market analyst with expertise in technical and fundamental analysis."},
-                    {"role": "user", "content": analysis_prompt}
-                ]
-            )
+**DATA PROVIDED:**
+- Current Price: ₹{current_price}
+- Technical Trend: {trend_info}
+- RSI: {rsi_info}
+- MACD: {macd_info}
+- Risk Level: {risk_info}
+- Confidence: {confidence_data.get('confidence_level', 'N/A')}
+
+**NEWS SENTIMENT ANALYSIS:**
+- Overall Sentiment: {sentiment_info}
+- Article Count: {sentiment_data.get('article_count', 0)}
+- Pattern Summary: {pattern_summary}
+- Consensus: {consensus_level} ({consensus_pct:.0f}% agreement)
+- Conflicts: {"Yes - " + str(len(conflicts)) + " detected" if conflicts else "None"}
+
+**NEWS SYNTHESIS:**
+{ai_synthesis}
+
+**AUTOMATED RECOMMENDATION:**
+Action: {recommendation.get('action', 'N/A')}
+Target: ₹{recommendation.get('target_price', 'N/A')}
+Stop Loss: ₹{recommendation.get('stop_loss', 'N/A')}
+
+**PROVIDE ANALYSIS:**
+
+## 1. Market Position
+[2-3 sentences on valuation and standing]
+
+## 2. Technical Analysis
+[Interpret indicators]
+
+## 3. News Sentiment & Patterns
+[Discuss the news sentiment, patterns detected, and any conflicts]
+{ai_synthesis}
+
+## 4. Recommendation
+- **Action:** {recommendation.get('action')}
+- **Timeframe:** {recommendation.get('timeframe')}
+- **Target:** ₹{recommendation.get('target_price')}
+- **Stop Loss:** ₹{recommendation.get('stop_loss')}
+- **Reasoning:** [Consider technicals + sentiment + patterns]
+
+## 5. Risk Assessment
+- **Risk Level:** {risk_info}
+- **Key Risks:** [2-3 risks, include sentiment conflicts if any]
+- **Key Opportunities:** [2-3 opportunities]
+
+**IMPORTANT:**
+- Integrate pattern analysis findings
+- Address any sentiment conflicts
+- Consider consensus strength
+"""
             
-            analysis = completion.choices[0].message.content
-            print(analysis)
-            
-            return {
-                'stock_data': stock_data,
-                'technical_data': technical_data,
-                'news_data': news_data,
-                'analysis': analysis
-            }
-        except Exception as e:
-            return {'error': f"Error in analysis: {str(e)}"}
+            try:
+                completion = self.groq_client.chat.completions.create(
+                    model="openai/gpt-oss-120b",
+                    messages=[
+                        {"role": "system", "content": "You are a professional Indian stock market analyst with expertise in technical and fundamental analysis."},
+                        {"role": "user", "content": analysis_prompt}
+                    ]
+                )
+                
+                analysis = completion.choices[0].message.content
+                print(analysis)
+                
+                result = {
+                    'stock_data': stock_data,
+                    'technical_data': technical_data,
+                    'risk_data': risk_data,
+                    'confidence_data': confidence_data,
+                    'recommendation': recommendation,
+                    'news_data': news_data,
+                    'sentiment_data': sentiment_data,  # Overall sentiment from multi-stage
+                    'patterns': patterns,  # NEW: Pattern analysis
+                    'ai_synthesis': ai_synthesis,  # NEW: AI synthesis
+                    'analysis': analysis
+                }
+                
+                # Log the analysis result
+                log_analysis_result(symbol, result)
+                
+                return result
+                
+            except Exception as e:
+                return {'error': f"Error in analysis: {str(e)}"}
 
 def format_output(analysis: Dict) -> None:
     """Format and print the analysis output."""

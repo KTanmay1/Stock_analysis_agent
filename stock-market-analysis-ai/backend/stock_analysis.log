@@ -1,0 +1,35 @@
+2025-10-12 19:42:12,051 - stock_agents - INFO - Starting: Technical analysis for INFY
+2025-10-12 19:42:13,047 - yfinance - ERROR - $INFY.NS: possibly delisted; no price data found  (period=1mo)
+2025-10-12 19:42:13,047 - stock_agents - INFO - Completed: Technical analysis for INFY in 1.00s
+2025-10-12 19:42:13,047 - stock_agents - WARNING - analyze_technical_indicators returned error: No historical data available (took 1.00s)
+2025-10-12 19:42:13,668 - yfinance - ERROR - $TCS.NS: possibly delisted; no price data found  (period=1y)
+2025-10-12 19:42:13,668 - stock_agents - INFO - Starting: Fetching stock info for RELIANCE
+2025-10-12 19:42:14,250 - yfinance - ERROR - $RELIANCE.NS: possibly delisted; no price data found  (period=1d)
+2025-10-12 19:42:14,251 - stock_agents - INFO - Completed: Fetching stock info for RELIANCE in 0.58s
+2025-10-12 19:42:14,251 - stock_agents - WARNING - get_stock_info returned error: No current data available (took 0.58s)
+2025-10-12 19:42:14,251 - stock_agents - INFO - Starting: Technical analysis for RELIANCE
+2025-10-12 19:42:14,780 - yfinance - ERROR - $RELIANCE.NS: possibly delisted; no price data found  (period=1mo)
+2025-10-12 19:42:14,781 - stock_agents - INFO - Completed: Technical analysis for RELIANCE in 0.53s
+2025-10-12 19:42:14,781 - stock_agents - WARNING - analyze_technical_indicators returned error: No historical data available (took 0.53s)
+2025-10-12 19:42:14,781 - stock_agents - INFO - Starting: Fetching stock info for INFY
+2025-10-12 19:42:15,358 - yfinance - ERROR - $INFY.NS: possibly delisted; no price data found  (period=1d)
+2025-10-12 19:42:15,359 - stock_agents - INFO - Completed: Fetching stock info for INFY in 0.58s
+2025-10-12 19:42:15,359 - stock_agents - WARNING - get_stock_info returned error: No current data available (took 0.58s)
+2025-10-12 19:42:15,359 - stock_agents - INFO - Starting: Technical analysis for INFY
+2025-10-12 19:42:15,888 - yfinance - ERROR - $INFY.NS: possibly delisted; no price data found  (period=1mo)
+2025-10-12 19:42:15,888 - stock_agents - INFO - Completed: Technical analysis for INFY in 0.53s
+2025-10-12 19:42:15,888 - stock_agents - WARNING - analyze_technical_indicators returned error: No historical data available (took 0.53s)
+2025-10-12 19:42:16,439 - yfinance - ERROR - $INFY.NS: possibly delisted; no price data found  (period=1y)
+2025-10-12 20:10:30,810 - stock_agents - INFO - Starting: Complete analysis for TCS
+2025-10-12 20:10:30,812 - stock_agents - INFO - Starting: Fetching stock info for TCS
+2025-10-12 20:10:33,922 - yfinance - ERROR - $TCS.NS: possibly delisted; no price data found  (period=1d)
+2025-10-12 20:10:33,923 - stock_agents - INFO - Completed: Fetching stock info for TCS in 3.11s
+2025-10-12 20:10:33,923 - stock_agents - WARNING - get_stock_info returned error: No current data available (took 3.11s)
+2025-10-12 20:10:33,924 - stock_agents - INFO - Starting: Technical analysis for TCS
+2025-10-12 20:10:34,645 - yfinance - ERROR - $TCS.NS: possibly delisted; no price data found  (period=1mo)
+2025-10-12 20:10:34,646 - stock_agents - INFO - Completed: Technical analysis for TCS in 0.72s
+2025-10-12 20:10:34,646 - stock_agents - WARNING - analyze_technical_indicators returned error: No historical data available (took 0.72s)
+2025-10-12 20:10:39,814 - httpx - INFO - HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-10-12 20:10:39,827 - stock_agents - INFO - Analysis Result: {"timestamp": "2025-10-12T20:10:39.827799", "symbol": "TCS", "has_stock_data": false, "has_technical_data": false, "news_count": 15, "has_analysis": true}
+2025-10-12 20:10:39,828 - stock_agents - INFO - Completed: Complete analysis for TCS in 9.02s
+2025-10-12 20:10:39,828 - stock_agents - INFO - analyze_stock completed successfully in 9.02s

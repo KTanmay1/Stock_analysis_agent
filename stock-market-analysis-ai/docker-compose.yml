@@ -14,7 +14,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: stock-analysis-frontend
+    container_name: stock-analysis-frontend-streamlit
     ports:
       - "8501:8501"
     depends_on:
@@ -23,4 +23,17 @@ services:
       - .env
     environment:
       - BACKEND_URL=http://backend:8000
+    restart: unless-stopped
+
+  frontend-react:
+    build:
+      context: ./frontend-react
+      args:
+        # Use localhost for browser access from host machine
+        VITE_BACKEND_URL: http://localhost:8000
+    container_name: stock-analysis-frontend-react
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
     restart: unless-stopped

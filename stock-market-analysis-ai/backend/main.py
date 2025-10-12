@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from stock_agents import IndianStockAgent, WebSearchAgent, FinancialAnalysisAgent, TrendingStocksAgent
 from dotenv import load_dotenv
 import os
@@ -8,6 +9,20 @@ load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",  # Local development
+        "http://localhost:5173",  # Vite dev server
+        "https://*.vercel.app",   # Vercel deployments
+        "https://*.railway.app",  # Railway deployments
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize agents
 stock_agent = IndianStockAgent()
@@ -24,7 +39,8 @@ def read_root():
 def analyze_stock(symbol: str):
     """
     Analyze stock based on symbol.
-    Returns stock data, technical indicators, recent news, and AI analysis.
+    Returns stock data, technical indicators, risk metrics, confidence scores,
+    automated recommendation, recent news, and AI analysis.
     """
     try:
         # Clean symbol input
@@ -32,39 +48,37 @@ def analyze_stock(symbol: str):
         
         print(f"Analyzing symbol: {symbol}")  # Debug log
         
-        # Fetch stock data
-        stock_data = stock_agent.get_stock_info(symbol)
-        print(f"Stock data: {stock_data}")  # Debug log
-        
-        # Fetch technical indicators
-        technical_data = stock_agent.analyze_technical_indicators(symbol)
-        print(f"Technical data: {technical_data}")  # Debug log
-        
-        # Fetch recent news
-        news_data = web_agent.search(f"{symbol} stock news NSE India")
-        print(f"News data: {len(news_data)} articles found")  # Debug log
-        
-        # Generate AI analysis
+        # Generate comprehensive analysis using the financial agent
+        # This returns all data: stock_data, technical_data, risk_data, 
+        # confidence_data, recommendation, news_data, and analysis
         analysis_result = financial_agent.analyze_stock(symbol)
         
-        # Ensure we're getting the analysis from the result
-        analysis = analysis_result.get('analysis', 'No AI analysis available.')
+        # Check for errors
         if isinstance(analysis_result, dict) and 'error' in analysis_result:
-            print(f"AI Analysis error: {analysis_result['error']}")  # Debug log
-            analysis = f"Error in AI analysis: {analysis_result['error']}"
+            print(f"Analysis error: {analysis_result['error']}")  # Debug log
+            return {"error": analysis_result['error']}
         
-        response_data = {
-            "stock_data": stock_data,
-            "technical_data": technical_data,
-            "news_data": news_data,
-            "analysis": analysis
+        # Return the complete analysis result
+        # This now includes all the new fields from our enhancements
+        print(f"Analysis completed successfully for {symbol}")  # Debug log
+        
+        return {
+            "stock_data": analysis_result.get('stock_data', {}),
+            "technical_data": analysis_result.get('technical_data', {}),
+            "risk_data": analysis_result.get('risk_data', {}),
+            "confidence_data": analysis_result.get('confidence_data', {}),
+            "recommendation": analysis_result.get('recommendation', {}),
+            "news_data": analysis_result.get('news_data', []),
+            "sentiment_data": analysis_result.get('sentiment_data', None),
+            "patterns": analysis_result.get('patterns', {}),  # NEW: Pattern analysis
+            "ai_synthesis": analysis_result.get('ai_synthesis', ''),  # NEW: AI synthesis
+            "analysis": analysis_result.get('analysis', 'No AI analysis available.')
         }
-        
-        print(f"Complete response data: {response_data}")  # Debug log
-        return response_data
         
     except Exception as e:
         print(f"Error in analyze_stock: {str(e)}")  # Debug log
+        import traceback
+        traceback.print_exc()
         return {"error": f"Failed to analyze stock: {str(e)}"}
 
 

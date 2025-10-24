@@ -70,3 +70,5 @@ def analyze_stock(symbol: str):
 # Vercel serverless handler
 def handler(request):
     return app(request.scope, request.receive, request.send)
+
+

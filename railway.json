@@ -1,0 +1,19 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "services": {
+    "backend": {
+      "source": {
+        "repo": "KTanmay1/Stock_analysis_agent",
+        "rootDirectory": "stock-market-analysis-ai/backend"
+      },
+      "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "pip install -r requirements.txt"
+      },
+      "deploy": {
+        "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1",
+        "healthcheckPath": "/health"
+      }
+    }
+  }
+}

@@ -94,15 +94,14 @@ def test_credibility_scoring():
         print(f"   Credibility scores: {[a['credibility_score'] for a in news[:3]]}")
 
 
-def test_sentiment_model_loading():
-    """Test FinBERT model loads"""
-    print("   Loading FinBERT model...")
+def test_sentiment_client_initialization():
+    """Ensure Groq sentiment client initializes"""
+    print("   Initializing Groq sentiment analyzer...")
     analyzer = FinancialSentimentAnalyzer()
     
-    assert analyzer.model is not None, "Model should load"
-    assert analyzer.tokenizer is not None, "Tokenizer should load"
+    assert getattr(analyzer, "groq_client", None) is not None, "Groq client should be available"
     
-    print("   Model loaded successfully")
+    print("   Groq client initialized successfully")
 
 
 def test_positive_sentiment():
@@ -275,4 +274,3 @@ if __name__ == "__main__":
     
     # Exit with error code if any tests failed
     sys.exit(0 if runner.failed == 0 else 1)
-

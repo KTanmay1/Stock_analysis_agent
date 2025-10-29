@@ -10,14 +10,6 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set up transformers cache directory
-ENV TRANSFORMERS_CACHE=/app/.cache/transformers
-ENV HF_HOME=/app/.cache/huggingface
-RUN mkdir -p /app/.cache/transformers /app/.cache/huggingface
-
-# Models will be downloaded at runtime to reduce image size
-# This saves ~1.5GB in image size
-
 # Copy the app code
 COPY . .
 

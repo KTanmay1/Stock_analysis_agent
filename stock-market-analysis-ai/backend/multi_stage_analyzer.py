@@ -1,10 +1,11 @@
 """
 Multi-stage sentiment analysis pipeline
-Stage 1: FinBERT analyzes each article
-Stage 2: Pattern detection across all articles  
+Stage 1: Groq LLM scores each article
+Stage 2: Pattern detection across all articles
 Stage 3: Groq AI synthesizes insights
 """
 
+import os
 from typing import Dict, List
 from sentiment_analyzer import FinancialSentimentAnalyzer
 from pattern_analyzer import PatternAnalyzer
@@ -15,8 +16,8 @@ import numpy as np
 class MultiStageAnalyzer:
     """
     3-Stage comprehensive sentiment analysis pipeline
-    1. Per-article sentiment (FinBERT)
-    2. Cross-article pattern detection
+    1. Per-article sentiment (Groq)
+    2. Cross-article pattern detection (Groq-assisted)
     3. AI synthesis (Groq)
     """
     
@@ -28,9 +29,14 @@ class MultiStageAnalyzer:
             groq_api_key: Groq API key for AI synthesis
         """
         print("Initializing multi-stage analyzer...")
-        self.sentiment_analyzer = FinancialSentimentAnalyzer()
-        self.pattern_analyzer = PatternAnalyzer()
-        self.groq_client = Groq(api_key=groq_api_key)
+
+        api_key = groq_api_key or os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY is required for multi-stage analysis")
+
+        self.groq_client = Groq(api_key=api_key)
+        self.sentiment_analyzer = FinancialSentimentAnalyzer(groq_client=self.groq_client)
+        self.pattern_analyzer = PatternAnalyzer(groq_client=self.groq_client)
         print("✅ Multi-stage analyzer ready")
     
     def analyze_comprehensive(self, symbol: str, articles: List[Dict]) -> Dict:
@@ -61,8 +67,8 @@ class MultiStageAnalyzer:
                 'ai_synthesis': 'No articles available for analysis'
             }
         
-        # STAGE 1: Per-Article Sentiment (FinBERT)
-        print(f"[Stage 1/3] Analyzing {len(articles)} articles with FinBERT...")
+        # STAGE 1: Per-Article Sentiment (Groq)
+        print(f"[Stage 1/3] Analyzing {len(articles)} articles with Groq sentiment scorer...")
         articles_with_sentiment = []
         
         for article in articles:
@@ -78,7 +84,7 @@ class MultiStageAnalyzer:
         
         print(f"✅ Stage 1 complete: {len(articles_with_sentiment)} articles analyzed")
         
-        # STAGE 2: Pattern Detection
+        # STAGE 2: Pattern Detection (Groq-assisted)
         print(f"[Stage 2/3] Detecting patterns across articles...")
         patterns = self.pattern_analyzer.analyze_patterns(articles_with_sentiment)
         print(f"✅ Stage 2 complete: {patterns.get('pattern_summary', 'N/A')}")
@@ -206,4 +212,3 @@ Keep response concise (150 words max)."""
             'overall_score': round(float(overall_score), 3),
             'article_count': len(articles)
         }
-

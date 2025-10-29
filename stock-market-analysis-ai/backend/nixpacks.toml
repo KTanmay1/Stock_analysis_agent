@@ -4,13 +4,10 @@ nixPkgs = ["python39"]
 [phases.install]
 cmds = [
   "pip install --no-cache-dir --upgrade pip",
-  "pip install torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu",
   "pip install --no-cache-dir fastapi uvicorn[standard] python-dotenv",
-  "pip install --no-cache-dir requests beautifulsoup4 feedparser trafilatura",
+  "pip install --no-cache-dir requests beautifulsoup4 feedparser trafilatura lxml_html_clean",
   "pip install --no-cache-dir numpy pandas yfinance",
-  "pip install --no-cache-dir transformers==4.30.0 sentence-transformers==2.2.0",
-  "pip install --no-cache-dir scikit-learn plotly groq autogen",
-  "pip install --no-cache-dir lxml_html_clean"
+  "pip install --no-cache-dir plotly groq"
 ]
 
 [phases.build]

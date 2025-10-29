@@ -34,11 +34,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Set working directory
 WORKDIR /app
 
-# Set up cache directories
-ENV TRANSFORMERS_CACHE=/tmp/transformers_cache
-ENV HF_HOME=/tmp/huggingface
-RUN mkdir -p /tmp/transformers_cache /tmp/huggingface
-
 # Copy application code
 COPY . .
 

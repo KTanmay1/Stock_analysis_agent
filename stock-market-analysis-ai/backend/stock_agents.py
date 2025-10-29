@@ -1,4 +1,3 @@
-import autogen
 from typing import List, Dict
 import yfinance as yf
 import requests
@@ -85,7 +84,7 @@ class WebSearchAgent:
             # Step 3: Add credibility scores
             articles_with_content = self.news_aggregator.add_credibility_score(articles_with_content)
             
-            # Step 4: Run multi-stage analysis (FinBERT → Patterns → Groq)
+            # Step 4: Run multi-stage analysis (Groq sentiment → Patterns → Groq synthesis)
             print(f"🧠 Running multi-stage sentiment analysis...")
             comprehensive_analysis = self.multi_stage_analyzer.analyze_comprehensive(
                 symbol, articles_with_content
@@ -611,8 +610,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
 

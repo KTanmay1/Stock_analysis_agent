@@ -10,18 +10,12 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-# Configure CORS
+# Configure CORS - Allow all origins for public API
+# For production, we allow all origins since this is a public API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Local development
-        "http://localhost:5173",  # Vite dev server
-        "https://*.vercel.app",   # Vercel deployments
-        "https://*.railway.app",  # Railway deployments
-        "https://*.netlify.app",  # Netlify deployments
-        "https://*.onrender.com", # Render deployments (legacy)
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins (public API)
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )

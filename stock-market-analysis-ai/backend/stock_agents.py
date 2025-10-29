@@ -28,15 +28,19 @@ from risk_confidence import (
 # Import logging
 from logger_config import log_function_call, PerformanceTimer, log_analysis_result
 
-# Load environment variables
+# Load environment variables (for local development)
 load_dotenv()
+
+# Get GROQ_API_KEY from environment (works for both .env and Railway)
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 
 if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY not found in .env file")
-
-# Initialize Groq client
-groq_client = Groq(api_key=GROQ_API_KEY)
+    # Don't raise immediately - allow service to start, fail at first use
+    print("⚠️  WARNING: GROQ_API_KEY not found. Service will start but API calls will fail.")
+    groq_client = None
+else:
+    # Initialize Groq client
+    groq_client = Groq(api_key=GROQ_API_KEY)
 
 class WebSearchAgent:
     def __init__(self):

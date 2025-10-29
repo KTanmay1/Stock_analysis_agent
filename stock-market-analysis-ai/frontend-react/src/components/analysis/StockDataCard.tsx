@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useTheme } from '../../context/ThemeContext';
 import { Card } from '../ui/Card';
 import type { StockData } from '../../types/stock.types';
 import { formatCurrency, formatNumber, formatFieldName, formatCompactNumber } from '../../utils/formatters';
@@ -10,12 +9,10 @@ interface StockDataCardProps {
 }
 
 export const StockDataCard: React.FC<StockDataCardProps> = ({ stockData }) => {
-  const { darkMode } = useTheme();
-
   if (stockData.error) {
     return (
       <Card>
-        <p className={`text-center ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
+        <p className="text-center text-red-400">
           {stockData.error}
         </p>
       </Card>
@@ -55,7 +52,7 @@ export const StockDataCard: React.FC<StockDataCardProps> = ({ stockData }) => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <h3 className={`text-2xl font-bold mb-6 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+        <h3 className="text-2xl font-bold mb-6 text-gray-100">
           {stockData.symbol}
         </h3>
         
@@ -66,12 +63,12 @@ export const StockDataCard: React.FC<StockDataCardProps> = ({ stockData }) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}
+              className="p-3 rounded-lg bg-gray-700/50"
             >
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>
+              <p className="text-sm text-gray-400 mb-1">
                 {formatFieldName(key)}
               </p>
-              <p className={`text-base font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+              <p className="text-base font-semibold text-gray-100">
                 {formatValue(key, value)}
               </p>
             </motion.div>

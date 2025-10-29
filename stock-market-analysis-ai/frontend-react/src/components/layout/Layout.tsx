@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
 
 export const Layout: React.FC = () => {
-  const { darkMode } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const bgColor = darkMode ? 'bg-gray-950' : 'bg-gray-50';
-  const textColor = darkMode ? 'text-gray-100' : 'text-gray-900';
-
   return (
-    <div className={`min-h-screen ${bgColor} ${textColor} transition-colors duration-300`}>
+    <div className="min-h-screen bg-gray-950 text-gray-100">
       <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       
       <div className="flex">

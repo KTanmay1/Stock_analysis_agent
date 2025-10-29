@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './context/ThemeContext';
 import { Layout } from './components/layout/Layout';
 import { TrendingPage } from './pages/TrendingPage';
 import { AnalysisPage } from './pages/AnalysisPage';
@@ -19,17 +18,15 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<TrendingPage />} />
-              <Route path="analyze" element={<AnalysisPage />} />
-              <Route path="analyze/:symbol" element={<AnalysisPage />} />
-            </Route>
-          </Routes>
-        </Router>
-      </ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<TrendingPage />} />
+            <Route path="analyze" element={<AnalysisPage />} />
+            <Route path="analyze/:symbol" element={<AnalysisPage />} />
+          </Route>
+        </Routes>
+      </Router>
     </QueryClientProvider>
   );
 }

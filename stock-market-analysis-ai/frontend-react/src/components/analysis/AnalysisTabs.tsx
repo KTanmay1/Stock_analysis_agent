@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, TrendingUp, Newspaper, Brain } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
 import type { StockAnalysisResponse } from '../../types/stock.types';
 import { StockDataCard } from './StockDataCard';
 import { TechnicalIndicators } from './TechnicalIndicators';
@@ -15,7 +14,6 @@ interface AnalysisTabsProps {
 type TabType = 'stock' | 'technical' | 'news' | 'ai';
 
 export const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ data }) => {
-  const { darkMode } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('stock');
 
   const tabs = [
@@ -43,7 +41,7 @@ export const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ data }) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Tab Navigation */}
-      <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className="border-b border-gray-700">
         <div className="flex flex-wrap gap-2 sm:gap-0 -mb-px">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -55,12 +53,8 @@ export const AnalysisTabs: React.FC<AnalysisTabsProps> = ({ data }) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 ${
                   isActive
-                    ? darkMode
-                      ? 'border-primary-500 text-primary-400'
-                      : 'border-primary-500 text-primary-600'
-                    : darkMode
-                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    ? 'border-primary-500 text-primary-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
                 }`}
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5" />

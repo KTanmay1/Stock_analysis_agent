@@ -44,14 +44,14 @@ export const getPerformanceColor = (value: number): string => {
   return 'text-gray-600';
 };
 
-export const getPerformanceColorBg = (value: number, darkMode: boolean): string => {
+export const getPerformanceColorBg = (value: number): string => {
   if (value > 0) {
-    return darkMode ? 'bg-green-900/20 text-green-400' : 'bg-green-100 text-green-700';
+    return 'bg-green-900/30 text-green-400';
   }
   if (value < 0) {
-    return darkMode ? 'bg-red-900/20 text-red-400' : 'bg-red-100 text-red-700';
+    return 'bg-red-900/30 text-red-400';
   }
-  return darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700';
+  return 'bg-gray-700 text-gray-300';
 };
 
 export const formatFieldName = (field: string): string => {

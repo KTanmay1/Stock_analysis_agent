@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useTheme } from '../../context/ThemeContext';
 import { StockCard } from './StockCard';
 import type { TrendingStock } from '../../types/stock.types';
 
@@ -15,8 +14,6 @@ export const TrendingList: React.FC<TrendingListProps> = ({
   stocks,
   showVolume = false,
 }) => {
-  const { darkMode } = useTheme();
-
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -34,7 +31,7 @@ export const TrendingList: React.FC<TrendingListProps> = ({
 
   return (
     <div className="mb-8">
-      <h2 className={`text-xl sm:text-2xl font-bold mb-4 sm:mb-6 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-100">
         {title}
       </h2>
       

@@ -18,6 +18,8 @@ app.add_middleware(
         "http://localhost:5173",  # Vite dev server
         "https://*.vercel.app",   # Vercel deployments
         "https://*.railway.app",  # Railway deployments
+        "https://*.netlify.app",  # Netlify deployments
+        "https://*.onrender.com", # Render deployments (legacy)
     ],
     allow_credentials=True,
     allow_methods=["*"],
